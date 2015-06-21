@@ -273,6 +273,77 @@ public class MainActivity extends Activity {
 
         }// end update Court
 
+
+        public void drawCourt(){
+            canvas = ourHolder.lockCanvas();
+            //Paint paint = new Paint();
+            paint.setColor(Color.argb(255, 255, 255, 255));
+            paint.setTextSize(45);
+            canvas.drawText("Score:" + score + "Lives" + lives + "fpsi" + fpx, 20, 40, paint);
+            //Draw the squash racket
+            canvas.drawRect(racketPosition.x - (racketWidth / 2),
+                    racketPosition.y - (racketHeight /2), racketPosition.x +
+                            (racketWidth/2), racketPosition.y + racketHeight, paint);
+            //Draw the ball
+            canvas.drawRect(ballPosition.x, ballPosition.y,
+                    ballPosition.x +ballWidth, ballPosition.y + ballWidth,
+                    paint);
+            ourHolder.unlockCanvasAndPost(canvas);
+        }// ends drawCourt
+
+        public void controlFPS(){
+            long timeThisFrame = (System.currentTimeMillis() - lastFrameTime);
+            long timeToSleep = 15 - timeThisFrame;
+            if(timeThisFrame > 0){
+                fps = (int) (100/ timeThisFrame);
+            }//end if time this frame
+            if(timeToSleep > 0){
+                try {
+                    ourThread.sleep(timeToSleep);
+                }//end try
+                catch (InterruptedException e){
+                }// end catch
+            }//end if time to sleep
+            lastFrameTime = System.currentTimeMillis();
+        }//end controlFPS
+
+        public void pause() {
+            playingSquash = false;
+            try{
+                ourThread.join();
+            }//end try
+            catch (InterruptedException e){
+            }//end catch
+        }//end pause
+
+        public void resume() {
+            playingSquash = true;
+            ourThread = new Thread(this);
+            ourThread.start();
+        }//end resume
+
+        @Override
+        public boolean onTouchEvent(MotionEvent, motionEvent){
+            switch (motionEvent.getAction() & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_DOWN:
+                    if(motionEvent.getX() == screenWidth / 2) {
+                        racketIsMovingRight = true;
+                        racketIsMovingLeft = false;
+                    }//end if
+                    else{
+                        racketIsMovingRight = false;
+                        racketIsMovingLeft = true;
+                    }//end else
+                    break;
+
+                case MotionEvent.ACTION_UP:
+                    racketIsMovingRight = false;
+                    racketIsMovingLeft = false;
+                    break;
+            }//END switch
+            return true;
+        }//end onTouchEvent
+
     } //ends SquashCourtView Class
 
 
