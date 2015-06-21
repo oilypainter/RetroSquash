@@ -1,8 +1,8 @@
 package com.dontknowpub.retrosquash;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
-import android.content.Content;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Canvas;
@@ -118,6 +118,162 @@ public class MainActivity extends Activity {
         lives = 3;
 
     } //ends onCreate
+    class SquashCourtView extends SurfaceView implements Runnable{
+        Thread ourThread = null;
+        SurfaceHolder ourHolder;
+        volatile boolean playingSquash;
+
+        public SquashCourtView(Context context){
+            super(context);
+            ourHolder = getHolder();
+            paint = new Paint();
+            ballIsMovingDown = true;
+
+            //Send the ball in random direction
+            Random randomNumber = new Random();
+            int ballDirection = randomNumber.nextInt(3);
+            switch (ballDirection){
+                case 0:
+                     ballIsMovingLeft = true;
+                    ballIsMovingRight = false;
+                    break;
+
+                case 1:
+                    ballIsMovingRight = true;
+                    ballIsMovingLeft = false;
+                    break;
+                case 2:
+                    ballIsMovingLeft = false;
+                    ballIsMovingRight = false;
+                    break;
+
+            }//end switch
+        } //ends SquashCourView
+
+        @Override
+        public  void run() {
+            while(playingSquash) {
+                updateCourt();
+                drawCourt();
+                controlFPS();
+            } //end while
+        }// end run
+
+        public void updateCourt() {
+            if (racketIsMovingRight) {
+                racketPosition.x = racketPosition.x + 10;
+            }// if racketIsMovingRight
+
+            if (racketIsMovingLeft) {
+                racketPosition.x = racketPosition.x - 10;
+            } // end if racketIsMovingLeft
+
+            // detect collisions
+
+            //hit right of screen
+            if(ballPosition.x + ballWidth > screenWidth) {
+                ballIsMovingLeft = true;
+                ballIsMovingRight = false;
+                soundPool.play(sample1,1, 1, 0, 0, 0, 1);
+            }// end if ballPosition is greater then screenWidth
+
+            //hit left of screen
+            if (ballPosition < 0) {
+                ballIsMovingLeft = false;
+                ballIsMovingRight = true;
+                soundPool.play(sample1, 1, 1, 0, 0, 1);
+            }//end if ball position left
+
+            //Edge of ball has hit bottom of screen
+            if(ballPosition.y > screenHeight - ballWidth) {
+                lives = lives - 1;
+                if(lives == 0){
+                    lives = 3;
+                    score = 0;
+                    soundPool.play(sample4, 1, 1, 0, 0, 1);
+                }//end if lives = 0
+
+                ballPosition.y = 1 + ballWidth; //back to top of screen
+
+                //what horizontal direction should we use
+                //for the next falling ball
+                Random randomNumber = new Random();
+                int startX = randomNumber.nextInt(screenWidth - ballWidth) + 1;
+                ballPosition.x = startX + ballWidth;
+
+                int ballDirection = randomNumber.nextInt(3);
+                switch (ballDirection){
+                    case 0:
+                        ballIsMovingLeft = true;
+                        ballIsMovingRight = false;
+                        break;
+
+                    case 1:
+                        ballIsMovingLeft = false;
+                        ballIsMovingRight = true;
+                        break;
+
+                    case 2:
+                        ballIsMovingLeft = false;
+                        ballIsMovingRight = false;
+                        break;
+
+                }// end switch
+
+            } //end of if ballPosition y
+
+            // ball hits the top of the screen
+            if(ballPosition.y <= 0){
+                ballIsMovingDown = true;
+                ballIsMovingUp = false;
+                ballPosition.y = 1;
+                soundPool(sample2, 1, 1, 0, 0, 1);
+            }//end if for ball podition moving down
+
+            // depending upon the two directions we should
+            // be moving in adjust our x any positions
+            if(ballIsMovingDown) {
+                ballPosition.y += 6;
+            }//end ball moving down
+
+            if(ballIsMovingUp){
+                ballPosition.y -= 10;
+            }//end ball moving up
+
+            if (ballIsMovingLeft){
+                ballPosition.x -= 12;
+            }// end ball moving left
+
+            if(ballIsMovingRight){
+                ballPosition.x += 12;
+            }// end ball moving right
+
+            //Has the ball hit the racket
+            if(ballPosition.y + ballWidth >= (racketPosition.y - racketHeight /2)){
+                int halfRacket = racketWidth / 2;
+                if (ballPosition.x + ballWidth > (racketPosition.x - halfRacket)
+                        && ballPosition.x - ballWidth < (racketPosition.x + halfRacket)){
+                    //rebound the ball vertically and play a sound
+                    soundPool.play(sample3, 1, 1, 0, 0, 1);
+                    score++;
+                    ballIsMovingUp = true;
+                    ballIsMovingDown = false;
+                    //now decide how to rebound the ball horizontally
+                    if (ballPosition.x > racketPosition.x) {
+                        ballIsMovingRight = true;
+                        ballIsMovingLeft = false;
+                    }//end if horizontal ball rebound
+                    else{
+                        ballIsMovingRight = false;
+                        ballIsMovingLeft = true;
+                    }//end else
+                }// end ball position x
+            }//end if ball hits the racket
+
+
+        }// end update Court
+
+    } //ends SquashCourtView Class
 
 
 } //ends mainActivity
